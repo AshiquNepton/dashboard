@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ERP System">
+    <meta name="theme-color" content="#0d6efd">
+    <title>ERP System - Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Loading overlay styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-ring {
+            width: 120px;
+            height: 120px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 140px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Password visibility toggle styles */
+        .password-toggle-container {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            z-index: 10;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .password-toggle:hover {
+            color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+        }
+
+        /* Custom checkbox styling for remember me */
+        .custom-checkbox {
+            position: relative;
+            display: inline-block;
+        }
+
+        .custom-checkbox input[type="checkbox"] {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .custom-checkbox .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: transparent;
+            border: 2px solid var(--bs-border-color);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .custom-checkbox:hover .checkmark {
+            border-color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+        }
+
+        .custom-checkbox .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        /* Forgot password modal styling */
+        .contact-modal .modal-content {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+       .contact-modal .modal-header {
+    background: var(--bs-primary-bg-subtle);
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark, #0056b3) 100%);
+    border: none;
+    padding: 2rem;
+    transition: background 0.3s ease;
+}
+
+        .contact-modal .modal-body {
+            padding: 2rem;
+        }
+
+        .contact-info {
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--bs-primary);
+        }
+
+        .contact-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 8px 25px rgba(var(--bs-primary-rgb), 0.3);
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0.7);
+            }
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(var(--bs-primary-rgb), 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0);
+            }
+        }
+
+        /* Minimal custom styles for mobile optimization */
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .form-control {
+            font-size: 16px; /* Prevent zoom on iOS */
+            padding-right: 50px; /* Space for password toggle */
+        }
+
+        /* Prevent text selection except for inputs */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        input, textarea, select {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+
+        /* Hide scrollbars */
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Auto-fill styling */
+        .auto-filled {
+            background-color: rgba(var(--bs-success-rgb), 0.1) !important;
+            border-color: var(--bs-success) !important;
+        }
+
+        .auto-filled + label {
+            color: var(--bs-success) !important;
+        }
+         html {
+            height: 100%;
+            height: -webkit-fill-available;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            overflow-x: hidden;
+        }
+
+        /* Password toggle positioning */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            z-index: 10;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        .password-toggle:hover {
+            color: var(--bs-primary);
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+        }
+    </style>
+
+    <!-- Global Theme Manager Script -->
+    <script>
+        // Global Theme Manager - Initialize theme before page renders
+        (function() {
+            const savedTheme = localStorage.getItem('erp-theme') || 'dark';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            window.ERPTheme = savedTheme;
+        })();
+    </script>
+</head>
+<body class="bg-gradient bg-primary-subtle">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="loading-ring"></div>
+            <div class="loading-logo bg-primary d-flex align-items-center justify-content-center">
+                <img src="/static/media/Logo2.png" alt="Loading..." class="loading-logo">
+            </div>
+        </div>
+        <div class="loading-text">Please wait...</div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal fade contact-modal" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header text-white text-center">
+                    <div class="w-100">
+                        <div class="contact-avatar pulse-animation">
+                            <i class="fas fa-headset fa-2x text-white"></i>
+                        </div>
+                        <h4 class="modal-title fw-bold" id="forgotPasswordModalLabel">Password Recovery Support</h4>
+                        <p class="mb-0 opacity-75">Need help accessing your account?</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="contact-info">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <i class="fas fa-user-circle fa-3x text-primary me-3"></i>
+                            <div class="text-start">
+                                <h5 class="mb-1 fw-bold">NEPTON MUHAMMED ASHIQU</h5>
+                                <p class="mb-0 text-muted">System Administrator</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="d-flex align-items-center justify-content-center p-3 bg-light rounded-3">
+                                    <i class="fas fa-phone text-success me-3 fa-lg"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Contact Number</small>
+                                        <strong class="text-dark">50480070</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info rounded-4 border-0 mt-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Quick Help:</strong> Contact our system administrator for immediate password reset assistance. Available during business hours.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <a href="tel:50480070" class="btn btn-success rounded-pill px-4">
+                        <i class="fas fa-phone me-2"></i>Call Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Toggle - Only shown on login page -->
+    <div class="position-fixed top-0 end-0 m-3" style="z-index: 1000;">
+        <button class="btn btn-outline-primary rounded-pill px-3 py-2 border-2 shadow" onclick="toggleTheme()">
+            <i class="fas fa-sun d-none" id="theme-icon-light"></i>
+            <span class="fw-semibold mx-2" id="theme-text">Dark</span>
+            <i class="fas fa-moon" id="theme-icon-dark"></i>
+        </button>
+    </div>
+
+    <!-- Main Login Container -->
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center p-3">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 col-sm-8 col-md-6 col-lg-4 col-xl-3">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <!-- Header -->
+                    <div class="card-header bg-primary text-white text-center py-5 border-0" style="background-image: url('/static/media/header.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+</div>
+
+                    <!-- Body -->
+                    <div class="card-body p-4">
+                        <!-- Django Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3 border-0 mb-3" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <!-- Login Form -->
+                        <form method="POST" action="{% url 'login_post' %}" id="loginForm">
+                            {% csrf_token %}
+
+                            <div class="form-floating mb-3">
+                                <input type="text"
+                                       class="form-control rounded-3 border-2 {% if form.username.errors %}is-invalid{% endif %}"
+                                       id="username"
+                                       name="username"
+                                       placeholder="Username"
+                                       value="{{ form.username.value|default:'' }}"
+                                       required
+                                       autocomplete="username">
+                                <label for="username" class="text-muted">
+                                    <i class="fas fa-user me-2"></i>Username
+                                </label>
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.username.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-floating mb-3 password-toggle-container">
+                                <input type="password"
+                                       class="form-control rounded-3 border-2 {% if form.password.errors %}is-invalid{% endif %}"
+                                       id="password"
+                                       name="password"
+                                       placeholder="Password"
+                                       required>
+                                <label for="password" class="text-muted">
+                                    <i class="fas fa-lock me-2"></i>Password
+                                </label>
+                                <button type="button" class="password-toggle" onclick="togglePasswordVisibility()" title="Show/Hide Password">
+                                    <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                </button>
+                                {% if form.password.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.password.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Non-field errors -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger rounded-3 border-0 mb-3">
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="custom-checkbox">
+                                    <input type="checkbox" id="remember_me" name="remember_me">
+                                    <span class="checkmark"></span>
+                                    <label class="form-check-label ms-4" for="remember_me">
+                                        Remember me
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hidden field to pass selected theme -->
+                            <input type="hidden" name="selected_theme" id="selected_theme" value="">
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 fw-semibold mb-3 shadow-sm" id="loginBtn">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </button>
+
+                            <input type="hidden" name="next" value="{{ next }}">
+                        </form>
+
+                        <div class="text-center">
+                            <a href="#" class="text-decoration-none text-primary fw-medium" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                <i class="fas fa-key me-1"></i>Forgot your password?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="card-footer bg-light text-center py-3 border-0 text-muted small">
+                        <p class="mb-1">&copy; 2025 Dash Pro. All rights reserved.</p>
+                        <p class="mb-0">Nepton Business System</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global Theme Management System
+        const ERPThemeManager = {
+            STORAGE_KEY: 'erp-theme',
+            DEFAULT_THEME: 'dark',
+
+            // Initialize theme
+            init() {
+                const savedTheme = this.getTheme();
+                this.setTheme(savedTheme);
+                this.updateThemeToggle(savedTheme);
+            },
+
+            // Get current theme from localStorage
+            getTheme() {
+                return localStorage.getItem(this.STORAGE_KEY) || this.DEFAULT_THEME;
+            },
+
+            // Set theme and save to localStorage
+            setTheme(theme) {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+                localStorage.setItem(this.STORAGE_KEY, theme);
+
+                // Update hidden form field
+                const hiddenThemeField = document.getElementById('selected_theme');
+                if (hiddenThemeField) {
+                    hiddenThemeField.value = theme;
+                }
+
+                // Dispatch custom event for other scripts to listen to theme changes
+                window.dispatchEvent(new CustomEvent('themeChanged', {
+                    detail: { theme: theme }
+                }));
+            },
+
+            // Toggle between light and dark themes
+            toggle() {
+                const currentTheme = this.getTheme();
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                this.setTheme(newTheme);
+                this.updateThemeToggle(newTheme);
+                return newTheme;
+            },
+
+            // Update theme toggle UI
+            updateThemeToggle(theme) {
+                const lightIcon = document.getElementById('theme-icon-light');
+                const darkIcon = document.getElementById('theme-icon-dark');
+                const themeText = document.getElementById('theme-text');
+
+                if (theme === 'dark') {
+                    if (lightIcon) lightIcon.classList.add('d-none');
+                    if (darkIcon) darkIcon.classList.remove('d-none');
+                    if (themeText) themeText.textContent = 'Dark';
+                } else {
+                    if (lightIcon) lightIcon.classList.remove('d-none');
+                    if (darkIcon) darkIcon.classList.add('d-none');
+                    if (themeText) themeText.textContent = 'Light';
+                }
+            }
+        };
+
+        // Remember Me Management System
+        const RememberMeManager = {
+            STORAGE_KEY: 'erp-remembered-credentials',
+
+            // Save credentials when remember me is checked
+            saveCredentials(username, isRemembered) {
+                if (isRemembered) {
+                    const credentials = {
+                        username: username,
+                        timestamp: Date.now(),
+                        remembered: true
+                    };
+                    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(credentials));
+                } else {
+                    localStorage.removeItem(this.STORAGE_KEY);
+                }
+            },
+
+            // Load saved credentials
+            loadCredentials() {
+                try {
+                    const saved = localStorage.getItem(this.STORAGE_KEY);
+                    if (saved) {
+                        return JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.error('Error loading saved credentials:', e);
+                }
+                return null;
+            },
+
+            // Auto-fill form if credentials are remembered
+            autoFillForm() {
+                const credentials = this.loadCredentials();
+                if (credentials && credentials.remembered) {
+                    const usernameField = document.getElementById('username');
+                    const rememberCheckbox = document.getElementById('remember_me');
+
+                    if (usernameField && credentials.username) {
+                        usernameField.value = credentials.username;
+                        usernameField.classList.add('auto-filled');
+
+                        // Trigger floating label
+                        if (usernameField.value) {
+                            usernameField.focus();
+                            usernameField.blur();
+                        }
+                    }
+
+                    if (rememberCheckbox) {
+                        rememberCheckbox.checked = true;
+                    }
+
+                    return true;
+                }
+                return false;
+            },
+
+            // Clear saved credentials
+            clearCredentials() {
+                localStorage.removeItem(this.STORAGE_KEY);
+            }
+        };
+
+        // Password visibility toggle
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+
+        // Loading functions
+        function showLoading(text = 'Please wait...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = overlay.querySelector('.loading-text');
+            loadingText.textContent = text;
+            overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'none';
+        }
+
+        // Theme toggle function (called by onclick)
+        function toggleTheme() {
+            ERPThemeManager.toggle();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            ERPThemeManager.init();
+
+            // Auto-fill remembered credentials
+            RememberMeManager.autoFillForm();
+
+            // Auto-hide alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert:not(.alert-danger)');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // Listen for theme changes from other pages/tabs
+            window.addEventListener('storage', function(e) {
+                if (e.key === ERPThemeManager.STORAGE_KEY) {
+                    const newTheme = e.newValue || ERPThemeManager.DEFAULT_THEME;
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    ERPThemeManager.updateThemeToggle(newTheme);
+                }
+            });
+
+            // Form submission with loading and remember me handling
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const rememberMe = document.getElementById('remember_me').checked;
+                const submitBtn = document.getElementById('loginBtn');
+
+                // Basic client-side validation
+                if (!username || !password) {
+                    e.preventDefault();
+                    alert('Please enter both username and password');
+                    return false;
+                }
+
+                // Save remember me preference
+                RememberMeManager.saveCredentials(username, rememberMe);
+
+                // Ensure theme is set in hidden field before submission
+                const currentTheme = ERPThemeManager.getTheme();
+                document.getElementById('selected_theme').value = currentTheme;
+
+                // Show loading overlay
+                showLoading('Signing you in...');
+
+                // Update button state
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+                submitBtn.disabled = true;
+
+                // If there's an error, hide loading after 10 seconds (fallback)
+                setTimeout(() => {
+                    if (document.getElementById('loadingOverlay').style.display === 'flex') {
+                        hideLoading();
+                        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+                        submitBtn.disabled = false;
+                    }
+                }, 10000);
+            });
+
+            // Handle password field focus for better UX
+            const passwordField = document.getElementById('password');
+            passwordField.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+
+            passwordField.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+
+            // Add keyboard shortcut for password visibility toggle
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'h' && document.activeElement === passwordField) {
+                    e.preventDefault();
+                    togglePasswordVisibility();
+                }
+            });
+        });
+
+        // Make functions globally available
+        window.ERPThemeManager = ERPThemeManager;
+        window.RememberMeManager = RememberMeManager;
+        window.showLoading = showLoading;
+        window.hideLoading = hideLoading;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+
+        // Demo: Show loading on page load for 2 seconds
+        window.addEventListener('load', function() {
+            showLoading();
+            setTimeout(hideLoading, 2000);
+        });
+    </script>
+</body>
+</html>

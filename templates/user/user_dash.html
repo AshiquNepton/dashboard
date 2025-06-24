@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Chart.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            padding-top: 90px; /* Increased from 80px to ensure proper clearance */
+            overflow-x: hidden;
+        }
+
+        /* Fixed header height adjustment */
+        .navbar {
+            height: 90px; /* Ensure consistent header height */
+        }
+
+        /* Loading overlay styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-ring {
+            width: 120px;
+            height: 120px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 140px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Ensure first section has proper spacing */
+        .first-section {
+            margin-top: 1rem !important; /* Reduced margin since body padding is increased */
+        }
+    </style>
+
+    <script>
+        // Apply saved theme immediately to prevent flash
+        (function () {
+            const savedTheme = localStorage.getItem('erp-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+
+</head>
+<body class="bg-body-secondary overflow-auto">
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="text-center">
+        <div class="loading-spinner">
+            <div class="loading-ring"></div>
+            <div class="loading-logo bg-primary d-flex align-items-center justify-content-center">
+                <img src="/static/media/Logo2.png" alt="Loading..." class="loading-logo">
+                {#                    <i class="fas fa-chart-line text-white fs-2"></i>#}
+            </div>
+        </div>
+        <div class="loading-text">Loading...</div>
+    </div>
+</div>
+
+<!-- Fixed Header -->
+<nav class="navbar navbar-expand-lg navbar-light bg-body shadow-sm fixed-top">
+    <div class="container-fluid">
+        <!-- Desktop Layout -->
+        <div class="d-none d-lg-flex w-100 align-items-center">
+            <!-- Date Input - Left -->
+            <div>
+                <input type="date" class="form-control" id="selectedDate" style="max-width: 150px;">
+            </div>
+
+            <!-- Company Dropdown - Center -->
+            <div class="flex-grow-1 d-flex justify-content-center">
+                <select class="form-select w-auto" id="companySelect" style="max-width: 300px;">
+                    <option value="sample-company">Sample Company</option>
+                    <option value="sub-company-1">Sub Company 1</option>
+                    <option value="sub-company-2">Sub Company 2</option>
+                </select>
+            </div>
+
+            <!-- Navigation Controls - Right -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" id="refreshBtn">
+                    <i class="fas fa-refresh"></i>
+                </button>
+                <button class="btn btn-outline-secondary" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-secondary" id="nextBtn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Layout -->
+        <div class="d-lg-none w-100">
+            <!-- Top Row - Company Dropdown -->
+            <div class="d-flex justify-content-center mb-2">
+                <select class="form-select" id="companySelectMobile" style="max-width: 300px;">
+                    <option value="sample-company">Sample Company</option>
+                    <option value="sub-company-1">Sub Company 1</option>
+                    <option value="sub-company-2">Sub Company 2</option>
+                </select>
+            </div>
+
+            <!-- Bottom Row - Date and Controls -->
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Date Input - Left -->
+                <div>
+                    <input type="date" class="form-control" id="selectedDateMobile" style="max-width: 140px;">
+                </div>
+
+                <!-- Navigation Controls - Right -->
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" id="refreshBtnMobile">
+                        <i class="fas fa-refresh"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="prevBtnMobile">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="nextBtnMobile">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Main Content -->
+<div class="container-fluid ">
+    <!-- Sales Section -->
+    <div class="card mb-4 first-section" id="salesSection">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Sales Data</h5>
+            <span class="badge bg-light text-primary fs-6" id="salesTotal">Total: QAR0</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3" id="salesDataGrid">
+                <!-- Dynamic sales data will be populated here -->
+            </div>
+            <div class="mt-4">
+                <canvas id="salesChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Section -->
+    <div class="card mb-4" id="purchaseSection">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Purchase</h5>
+            <span class="badge bg-light text-success fs-6" id="purchaseTotal">Total: QAR0</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-3" id="purchaseDataGrid">
+                <!-- Dynamic purchase data will be populated here -->
+            </div>
+            <div class="mt-4">
+                <canvas id="purchaseChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Section -->
+    <div class="card mb-4" id="paymentsSection">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Payments</h5>
+            <span class="badge bg-light text-warning fs-6" id="paymentsTotal">Total: QAR0</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-3" id="paymentsDataGrid">
+                <!-- Dynamic payments data will be populated here -->
+            </div>
+            <div class="mt-4">
+                <canvas id="paymentsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipts Section -->
+    <div class="card mb-4" id="receiptsSection">
+        <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Receipts</h5>
+            <span class="badge bg-light text-info fs-6" id="receiptsTotal">Total: QAR0</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-3" id="receiptsDataGrid">
+                <!-- Dynamic receipts data will be populated here -->
+            </div>
+            <div class="mt-4">
+                <canvas id="receiptsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liquidity Section -->
+    <div class="card mb-4" id="liquiditySection">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Liquidity</h5>
+            <span class="badge bg-light text-secondary fs-6" id="liquidityTotal">Total: QAR0</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-3" id="liquidityDataGrid">
+                <!-- Dynamic liquidity data will be populated here -->
+            </div>
+            <div class="mt-4">
+                <canvas id="liquidityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{#<script>#}
+{#    // Global variables#}
+{#    let salesChart, paymentsChart, purchaseChart, receiptsChart, liquidityChart;#}
+{#    let currentCompanyCode = null;#}
+{#    let isLoadingData = false;#}
+{##}
+{#    // Get current date in YYYY-MM-DD format#}
+{#    function getCurrentDate() {#}
+{#        const today = new Date();#}
+{#        return today.toISOString().split('T')[0];#}
+{#    }#}
+{##}
+{#    // Theme toggle functionality#}
+{#    function initTheme() {#}
+{#        const savedTheme = localStorage.getItem('erp-theme') || 'light';#}
+{#        document.documentElement.setAttribute('data-bs-theme', savedTheme);#}
+{#    }#}
+{##}
+{##}
+{#    // Initialize dashboard#}
+{#    function initDashboard() {#}
+{#        console.log('=== INITIALIZING DASHBOARD ===');#}
+{##}
+{#        // Initialize theme (only read, don't toggle)#}
+{#        initTheme();#}
+{##}
+{#        // Set current date as default#}
+{#        const dateInput = document.getElementById('selectedDate');#}
+{#        if (dateInput && !dateInput.value) {#}
+{#            dateInput.value = getCurrentDate();#}
+{#        }#}
+{##}
+{#        loadCompanyData();#}
+{#    }#}
+{##}
+{#    // Load company data#}
+{#    async function loadCompanyData() {#}
+{#        try {#}
+{#            showLoadingOverlay();#}
+{#            console.log('Loading company data...');#}
+{##}
+{#            // Try to fetch from Django API first#}
+{#            try {#}
+{#                const response = await fetch('/get_companies_json/');#}
+{#                if (response.ok) {#}
+{#                    const data = await response.json();#}
+{##}
+{#                    const companySelect = document.getElementById('companySelect');#}
+{#                    companySelect.innerHTML = '';#}
+{##}
+{#                    // Add user's company as the first option (selected by default)#}
+{#                    if (data.user_company) {#}
+{#                        const userOption = document.createElement('option');#}
+{#                        userOption.value = data.user_company.company_code;#}
+{#                        userOption.textContent = data.user_company.name;#}
+{#                        userOption.selected = true;#}
+{#                        companySelect.appendChild(userOption);#}
+{#                        currentCompanyCode = data.user_company.company_code;#}
+{#                    }#}
+{##}
+{#                    // Add companies under the user's company#}
+{#                    if (data.companies && data.companies.length > 0) {#}
+{#                        data.companies.forEach(company => {#}
+{#                            const option = document.createElement('option');#}
+{#                            option.value = company.company_code;#}
+{#                            option.textContent = `  ${company.name}`;#}
+{#                            companySelect.appendChild(option);#}
+{#                        });#}
+{#                    }#}
+{##}
+{#                    console.log(`Loaded ${data.total_companies || 0} companies from API`);#}
+{#                } else {#}
+{#                    throw new Error('API not available');#}
+{#                }#}
+{#            } catch (apiError) {#}
+{#                console.log('API not available, using sample data');#}
+{#                // Use sample companies as fallback#}
+{#                const sampleCompanies = [#}
+{#                    {company_code: 'main', name: 'Main Company'},#}
+{#                    {company_code: 'sub1', name: 'Sub Company 1'},#}
+{#                    {company_code: 'sub2', name: 'Sub Company 2'}#}
+{#                ];#}
+{##}
+{#                const companySelect = document.getElementById('companySelect');#}
+{#                companySelect.innerHTML = '';#}
+{##}
+{#                sampleCompanies.forEach(company => {#}
+{#                    const option = document.createElement('option');#}
+{#                    option.value = company.company_code;#}
+{#                    option.textContent = company.name;#}
+{#                    companySelect.appendChild(option);#}
+{#                });#}
+{##}
+{#                currentCompanyCode = sampleCompanies[0].company_code;#}
+{#            }#}
+{##}
+{#            loadTransactionData();#}
+{#            createCharts();#}
+{#        } catch (error) {#}
+{#            console.error('Error loading companies:', error);#}
+{#            showNoDataMessage();#}
+{#        } finally {#}
+{#            hideLoadingOverlay();#}
+{#        }#}
+{#    }#}
+{##}
+{#    // Set selected company in Django session#}
+{#    async function setSelectedCompany(companyCode) {#}
+{#        if (!companyCode) {#}
+{#            return false;#}
+{#        }#}
+{##}
+{#        try {#}
+{#            const response = await fetch('/set_selected_company/', {#}
+{#                method: 'POST',#}
+{#                headers: {#}
+{#                    'Content-Type': 'application/json',#}
+{#                    'X-CSRFToken': getCookie('csrftoken')#}
+{#                },#}
+{#                body: JSON.stringify({#}
+{#                    company_code: parseInt(companyCode)#}
+{#                })#}
+{#            });#}
+{##}
+{#            if (response.ok) {#}
+{#                const result = await response.json();#}
+{#                if (result.success) {#}
+{#                    console.log('Company set successfully:', result.company_code);#}
+{#                    return true;#}
+{#                }#}
+{#            }#}
+{#            return false;#}
+{#        } catch (error) {#}
+{#            console.error('Error setting selected company:', error);#}
+{#            return false;#}
+{#        }#}
+{#    }#}
+{##}
+{#    // Load transaction data#}
+{#    async function loadTransactionData() {#}
+{#        if (isLoadingData) return;#}
+{##}
+{#        isLoadingData = true;#}
+{#        showLoadingOverlay();#}
+{##}
+{#        try {#}
+{#            const dateInput = document.getElementById('selectedDate');#}
+{#            const selectedDate = dateInput ? dateInput.value : getCurrentDate();#}
+{#            const selectedCompany = document.getElementById('companySelect').value;#}
+{##}
+{#            console.log('Loading data for:', selectedDate, selectedCompany);#}
+{##}
+{#            // Set selected company in session if it has changed#}
+{#            if (selectedCompany !== currentCompanyCode) {#}
+{#                console.log('Company changed from', currentCompanyCode, 'to', selectedCompany);#}
+{#                await setSelectedCompany(selectedCompany);#}
+{#                currentCompanyCode = selectedCompany;#}
+{#            }#}
+{##}
+{#            // Try to fetch from Django API#}
+{#            let data = null;#}
+{#            try {#}
+{#                const dateToUse = selectedDate && selectedDate.trim() !== '' ? selectedDate : getCurrentDate();#}
+{#                const url = `/get_transaction_data/?date=${dateToUse}`;#}
+{##}
+{#                const response = await fetch(url);#}
+{#                if (response.ok) {#}
+{#                    const result = await response.json();#}
+{#                    if (result.success) {#}
+{#                        data = result.data;#}
+{#                        console.log('Transaction data loaded from API:', data);#}
+{#                    } else {#}
+{#                        throw new Error(result.error || 'API error');#}
+{#                    }#}
+{#                } else {#}
+{#                    throw new Error('API not available');#}
+{#                }#}
+{#            } catch (apiError) {#}
+{#                console.log('API not available or no data found');#}
+{#                showNoDataMessage();#}
+{#                return;#}
+{#            }#}
+{##}
+{#            // Check if data exists#}
+{#            const hasData = data && (#}
+{#                    (data.sales && Object.keys(data.sales).length > 0) ||#}
+{#                    (data.purchase && Object.keys(data.purchase).length > 0) ||#}
+{#                    (data.payments && Object.keys(data.payments).length > 0) ||#}
+{#                    (data.receipts && Object.keys(data.receipts).length > 0) ||#}
+{#                    (data.liquidity && Object.keys(data.liquidity).length > 0)#}
+{#                );#}
+{##}
+{#            if (!hasData) {#}
+{#                showNoDataMessage();#}
+{#                return;#}
+{#            }#}
+{##}
+{#            // Update sections#}
+{#            updateSalesDataGrid(data.sales, data.item_groups ?.sales#}
+{#        )#}
+{#            ;#}
+{#            updateDataGrid('purchase', data.purchase);#}
+{#            updateDataGrid('payments', data.payments);#}
+{#            updateDataGrid('receipts', data.receipts);#}
+{#            updateDataGrid('liquidity', data.liquidity);#}
+{##}
+{#            // Update charts#}
+{#            updateChartsData(data);#}
+{##}
+{#        } catch (error) {#}
+{#            console.error('Error loading transaction data:', error);#}
+{#            showNoDataMessage();#}
+{#        } finally {#}
+{#            isLoadingData = false;#}
+{#            hideLoadingOverlay();#}
+{#        }#}
+{#    }#}
+{##}
+{#    // Show no data message#}
+{#    function showNoDataMessage() {#}
+{#        const sections = ['salesSection', 'purchaseSection', 'paymentsSection', 'receiptsSection', 'liquiditySection'];#}
+{##}
+{#        sections.forEach(sectionId => {#}
+{#            const section = document.getElementById(sectionId);#}
+{#            const grid = document.getElementById(sectionId.replace('Section', 'DataGrid'));#}
+{#            const total = document.getElementById(sectionId.replace('Section', 'Total'));#}
+{##}
+{#            section.classList.remove('d-none');#}
+{#            grid.innerHTML = `#}
+{#                    <div class="col-12">#}
+{#                        <div class="alert alert-info text-center" role="alert">#}
+{#                            <i class="fas fa-info-circle me-2"></i>#}
+{#                            No data found for the selected date and company#}
+{#                        </div>#}
+{#                    </div>#}
+{#                `;#}
+{#            total.textContent = 'Total: QAR  0';#}
+{#        });#}
+{##}
+{#        // Clear charts#}
+{#        if (salesChart) salesChart.data = {labels: [], datasets: []};#}
+{#        if (purchaseChart) purchaseChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};#}
+{#        if (paymentsChart) paymentsChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};#}
+{#        if (receiptsChart) receiptsChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};#}
+{#        if (liquidityChart) liquidityChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};#}
+{##}
+{#        [salesChart, purchaseChart, paymentsChart, receiptsChart, liquidityChart].forEach(chart => {#}
+{#            if (chart) chart.update();#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Update sales data grid with responsive business type columns#}
+{#    function updateSalesDataGrid(salesData, itemGroups = null) {#}
+{#        const grid = document.getElementById('salesDataGrid');#}
+{#        const section = document.getElementById('salesSection');#}
+{#        const totalSpan = document.getElementById('salesTotal');#}
+{##}
+{#        grid.innerHTML = '';#}
+{##}
+{#        if (!salesData || Object.keys(salesData).length === 0) {#}
+{#            section.classList.add('d-none');#}
+{#            return;#}
+{#        }#}
+{##}
+{#        section.classList.remove('d-none');#}
+{##}
+{#        // Calculate grand total#}
+{#        let grandTotal = 0;#}
+{#        Object.values(salesData).forEach(categoryData => {#}
+{#            Object.values(categoryData).forEach(amount => {#}
+{#                grandTotal += amount;#}
+{#            });#}
+{#        });#}
+{##}
+{#        totalSpan.textContent = `Total: QAR  ${grandTotal.toLocaleString()}`;#}
+{##}
+{#        // Calculate responsive column size based on number of business types#}
+{#        const businessTypeCount = Object.keys(salesData).length;#}
+{#        let colClass = 'col-12';#}
+{#        if (businessTypeCount <= 2) colClass = 'col-md-6';#}
+{#        else if (businessTypeCount <= 3) colClass = 'col-lg-4';#}
+{#        else if (businessTypeCount <= 4) colClass = 'col-xl-3';#}
+{#        else colClass = 'col-xxl-2';#}
+{##}
+{#        Object.keys(salesData).forEach(typeCode => {#}
+{#            const categoryData = salesData[typeCode];#}
+{#            const categoryName = itemGroups && itemGroups[typeCode] ? itemGroups[typeCode] : `Business Type ${typeCode}`;#}
+{##}
+{#            const totalAmount = Object.values(categoryData).reduce((sum, amount) => sum + amount, 0);#}
+{##}
+{#            if (totalAmount > 0) {#}
+{#                const businessTypeColumn = document.createElement('div');#}
+{#                businessTypeColumn.className = colClass;#}
+{#                businessTypeColumn.innerHTML = `#}
+{#                        <div class="card h-100 border-primary">#}
+{#                            <div class="card-header bg-primary text-white text-center">#}
+{#                                <h6 class="mb-1">${categoryName}</h6>#}
+{#                                <small class="badge bg-light text-primary">QAR  ${totalAmount.toLocaleString()}</small>#}
+{#                            </div>#}
+{#                            <div class="card-body p-2">#}
+{#                                ${Object.entries(categoryData).filter(([, amount]) => amount > 0).map(([transType, amount]) => `#}
+{#                                    <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-body-secondary rounded border-start border-primary border-3">#}
+{#                                        <small class="text-muted">${transType.charAt(0).toUpperCase() + transType.slice(1)}</small>#}
+{#                                        <strong class="text-primary">QAR  ${amount.toLocaleString()}</strong>#}
+{#                                    </div>#}
+{#                                `).join('')}#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    `;#}
+{#                grid.appendChild(businessTypeColumn);#}
+{#            }#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Update data grid with small rounded boxes#}
+{#    function updateDataGrid(sectionType, data) {#}
+{#        const grid = document.getElementById(`${sectionType}DataGrid`);#}
+{#        const section = document.getElementById(`${sectionType}Section`);#}
+{#        const totalSpan = document.getElementById(`${sectionType}Total`);#}
+{##}
+{#        grid.innerHTML = '';#}
+{##}
+{#        if (!data || Object.keys(data).length === 0 || Object.values(data).every(val => val === 0)) {#}
+{#            section.classList.add('d-none');#}
+{#            return;#}
+{#        }#}
+{##}
+{#        section.classList.remove('d-none');#}
+{##}
+{#        // Calculate total#}
+{#        const total = Object.values(data).reduce((sum, amount) => sum + amount, 0);#}
+{#        totalSpan.textContent = `Total: QAR  ${total.toLocaleString()}`;#}
+{##}
+{#        // Create small rounded boxes for payment types#}
+{#        Object.entries(data).forEach(([key, amount]) => {#}
+{#            if (amount > 0) {#}
+{#                const paymentBox = document.createElement('div');#}
+{#                paymentBox.className = 'col-6 col-sm-4 col-md-3 col-lg-2';#}
+{#                paymentBox.innerHTML = `#}
+{#                        <div class="card border-0 bg-body-secondary h-100">#}
+{#                            <div class="card-body p-2 text-center">#}
+{#                                <div class="badge bg-primary text-white mb-1 w-100 py-2">#}
+{#                                    ${key.charAt(0).toUpperCase() + key.slice(1)}#}
+{#                                </div>#}
+{#                                <div class="fs-6 fw-bold text-success">QAR  ${amount.toLocaleString()}</div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    `;#}
+{#                grid.appendChild(paymentBox);#}
+{#            }#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Chart colors using standard Bootstrap colors#}
+{#    function getChartColors() {#}
+{#        return {#}
+{#            cash: '#198754',      // success#}
+{#            card: '#0d6efd',      // primary#}
+{#            credit: '#ffc107',    // warning#}
+{#            online: '#dc3545',    // danger#}
+{#            bank: '#6f42c1',      // purple#}
+{#            investment: '#fd7e14', // orange#}
+{#            default: '#6c757d'    // secondary#}
+{#        };#}
+{#    }#}
+{##}
+{#    // Create charts#}
+{#    function createCharts() {#}
+{#        const colors = getChartColors();#}
+{##}
+{#        // Sales Chart#}
+{#        const salesCtx = document.getElementById('salesChart').getContext('2d');#}
+{#        salesChart = new Chart(salesCtx, {#}
+{#            type: 'bar',#}
+{#            data: {labels: [], datasets: []},#}
+{#            options: {#}
+{#                responsive: true,#}
+{#                maintainAspectRatio: false,#}
+{#                plugins: {legend: {position: 'top'}},#}
+{#                scales: {#}
+{#                    y: {beginAtZero: true},#}
+{#                    x: {beginAtZero: true}#}
+{#                }#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Purchase Chart#}
+{#        const purchaseCtx = document.getElementById('purchaseChart').getContext('2d');#}
+{#        purchaseChart = new Chart(purchaseCtx, {#}
+{#            type: 'pie',#}
+{#            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},#}
+{#            options: {#}
+{#                responsive: true,#}
+{#                maintainAspectRatio: false,#}
+{#                plugins: {legend: {position: 'bottom'}}#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Payments Chart#}
+{#        const paymentsCtx = document.getElementById('paymentsChart').getContext('2d');#}
+{#        paymentsChart = new Chart(paymentsCtx, {#}
+{#            type: 'pie',#}
+{#            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},#}
+{#            options: {#}
+{#                responsive: true,#}
+{#                maintainAspectRatio: false,#}
+{#                plugins: {legend: {position: 'bottom'}}#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Receipts Chart#}
+{#        const receiptsCtx = document.getElementById('receiptsChart').getContext('2d');#}
+{#        receiptsChart = new Chart(receiptsCtx, {#}
+{#            type: 'pie',#}
+{#            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},#}
+{#            options: {#}
+{#                responsive: true,#}
+{#                maintainAspectRatio: false,#}
+{#                plugins: {legend: {position: 'bottom'}}#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Liquidity Chart#}
+{#        const liquidityCtx = document.getElementById('liquidityChart').getContext('2d');#}
+{#        liquidityChart = new Chart(liquidityCtx, {#}
+{#            type: 'doughnut',#}
+{#            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},#}
+{#            options: {#}
+{#                responsive: true,#}
+{#                maintainAspectRatio: false,#}
+{#                plugins: {legend: {position: 'bottom'}}#}
+{#            }#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Update charts data#}
+{#    function updateChartsData(data) {#}
+{#        const colors = getChartColors();#}
+{##}
+{#        // Update Sales Chart#}
+{#        if (salesChart && data.sales) {#}
+{#            const businessTypes = Object.keys(data.sales);#}
+{#            const businessTypeNames = businessTypes.map(typeCode =>#}
+{#                    data.item_groups ?.sales[typeCode] || `Business Type ${typeCode}`#}
+{#        )#}
+{#            ;#}
+{##}
+{#            const allTransTypes = new Set();#}
+{#            Object.values(data.sales).forEach(categoryData => {#}
+{#                Object.keys(categoryData).forEach(transType => {#}
+{#                    if (categoryData[transType] > 0) {#}
+{#                        allTransTypes.add(transType);#}
+{#                    }#}
+{#                });#}
+{#            });#}
+{##}
+{#            salesChart.data.labels = businessTypeNames;#}
+{#            salesChart.data.datasets = Array.from(allTransTypes).map(transType => ({#}
+{#                label: transType.charAt(0).toUpperCase() + transType.slice(1),#}
+{#                data: businessTypes.map(typeCode => data.sales[typeCode][transType] || 0),#}
+{#                backgroundColor: colors[transType] || colors.default#}
+{#            }));#}
+{#            salesChart.update();#}
+{#        }#}
+{##}
+{#        // Update other charts#}
+{#        ['purchase', 'payments', 'receipts', 'liquidity'].forEach(type => {#}
+{#            const chart = eval(`${type}Chart`);#}
+{#            if (chart && data[type]) {#}
+{#                const entries = Object.entries(data[type]).filter(([, value]) => value > 0);#}
+{#                chart.data.labels = entries.map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));#}
+{#                chart.data.datasets[0].data = entries.map(([, value]) => value);#}
+{#                chart.data.datasets[0].backgroundColor = entries.map(([key]) => colors[key] || colors.default);#}
+{#                chart.update();#}
+{#            }#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Show/hide loading overlay#}
+{#    function showLoadingOverlay() {#}
+{#        const overlay = document.getElementById('loadingOverlay');#}
+{#        overlay.style.display = 'flex';#}
+{#    }#}
+{##}
+{#    function hideLoadingOverlay() {#}
+{#        const overlay = document.getElementById('loadingOverlay');#}
+{#        overlay.style.display = 'none';#}
+{#    }#}
+{##}
+{#    // Helper function to get CSRF token#}
+{#    function getCookie(name) {#}
+{#        let cookieValue = null;#}
+{#        if (document.cookie && document.cookie !== '') {#}
+{#            const cookies = document.cookie.split(';');#}
+{#            for (let i = 0; i < cookies.length; i++) {#}
+{#                const cookie = cookies[i].trim();#}
+{#                if (cookie.substring(0, name.length + 1) === (name + '=')) {#}
+{#                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));#}
+{#                    break;#}
+{#                }#}
+{#            }#}
+{#        }#}
+{#        return cookieValue;#}
+{#    }#}
+{##}
+{#    // Event listeners#}
+{#    document.addEventListener('DOMContentLoaded', function () {#}
+{#        initDashboard();#}
+{##}
+{##}
+{#        // Date change handler#}
+{#        document.getElementById('selectedDate').addEventListener('change', function () {#}
+{#            if (!isLoadingData) {#}
+{#                console.log('Date changed to:', this.value);#}
+{#                loadTransactionData();#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Company change handler#}
+{#        document.getElementById('companySelect').addEventListener('change', function () {#}
+{#            if (!isLoadingData) {#}
+{#                console.log('Company changed to:', this.value);#}
+{#                loadTransactionData();#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Settings button handler#}
+{#        document.getElementById('settingsBtn').addEventListener('click', function () {#}
+{#            console.log('Settings clicked');#}
+{#            // Add your settings logic here#}
+{#        });#}
+{#    });#}
+{#</script>#}
+
+<script>
+    // Global variables
+    let salesChart, paymentsChart, purchaseChart, receiptsChart, liquidityChart;
+    let currentCompanyCode = null;
+    let isLoadingData = false;
+
+    // Get current date in YYYY-MM-DD format
+    function getCurrentDate() {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    }
+
+    // Theme toggle functionality
+    function initTheme() {
+        const savedTheme = localStorage.getItem('erp-theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    }
+
+    // Date navigation functions
+    function changeDate(direction) {
+        const dateInput = document.getElementById('selectedDate') || document.getElementById('selectedDateMobile');
+        if (!dateInput) return;
+
+        const currentDate = new Date(dateInput.value || getCurrentDate());
+
+        if (direction === 'prev') {
+            currentDate.setDate(currentDate.getDate() - 1);
+        } else if (direction === 'next') {
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        const newDate = currentDate.toISOString().split('T')[0];
+        dateInput.value = newDate;
+
+        // Update both date inputs if they exist
+        const desktopDate = document.getElementById('selectedDate');
+        const mobileDate = document.getElementById('selectedDateMobile');
+        if (desktopDate) desktopDate.value = newDate;
+        if (mobileDate) mobileDate.value = newDate;
+
+        // Reload data
+        loadTransactionData();
+    }
+
+    function refreshData() {
+        console.log('Refreshing data...');
+        loadTransactionData();
+    }
+
+    // Initialize dashboard
+    function initDashboard() {
+        console.log('=== INITIALIZING DASHBOARD ===');
+
+        // Initialize theme (only read, don't toggle)
+        initTheme();
+
+        // Set current date as default for both inputs
+        const currentDate = getCurrentDate();
+        const desktopDateInput = document.getElementById('selectedDate');
+        const mobileDateInput = document.getElementById('selectedDateMobile');
+
+        if (desktopDateInput && !desktopDateInput.value) {
+            desktopDateInput.value = currentDate;
+        }
+        if (mobileDateInput && !mobileDateInput.value) {
+            mobileDateInput.value = currentDate;
+        }
+
+        loadCompanyData();
+    }
+
+    // Load company data
+    async function loadCompanyData() {
+        try {
+            showLoadingOverlay();
+            console.log('Loading company data...');
+
+            // Try to fetch from Django API first
+            try {
+                const response = await fetch('/get_companies_json/');
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update both desktop and mobile company selects
+                    const companySelects = [
+                        document.getElementById('companySelect'),
+                        document.getElementById('companySelectMobile')
+                    ].filter(select => select);
+
+                    companySelects.forEach(companySelect => {
+                        companySelect.innerHTML = '';
+
+                        // Add user's company as the first option (selected by default)
+                        if (data.user_company) {
+                            const userOption = document.createElement('option');
+                            userOption.value = data.user_company.company_code;
+                            userOption.textContent = data.user_company.name;
+                            userOption.selected = true;
+                            companySelect.appendChild(userOption);
+                            currentCompanyCode = data.user_company.company_code;
+                        }
+
+                        // Add companies under the user's company
+                        if (data.companies && data.companies.length > 0) {
+                            data.companies.forEach(company => {
+                                const option = document.createElement('option');
+                                option.value = company.company_code;
+                                option.textContent = `  ${company.name}`;
+                                companySelect.appendChild(option);
+                            });
+                        }
+                    });
+
+                    console.log(`Loaded ${data.total_companies || 0} companies from API`);
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (apiError) {
+                console.log('API not available, using sample data');
+                // Use sample companies as fallback
+                const sampleCompanies = [
+                    {company_code: 'main', name: 'Main Company'},
+                    {company_code: 'sub1', name: 'Sub Company 1'},
+                    {company_code: 'sub2', name: 'Sub Company 2'}
+                ];
+
+                const companySelects = [
+                    document.getElementById('companySelect'),
+                    document.getElementById('companySelectMobile')
+                ].filter(select => select);
+
+                companySelects.forEach(companySelect => {
+                    companySelect.innerHTML = '';
+
+                    sampleCompanies.forEach(company => {
+                        const option = document.createElement('option');
+                        option.value = company.company_code;
+                        option.textContent = company.name;
+                        companySelect.appendChild(option);
+                    });
+                });
+
+                currentCompanyCode = sampleCompanies[0].company_code;
+            }
+
+            loadTransactionData();
+            createCharts();
+        } catch (error) {
+            console.error('Error loading companies:', error);
+            showNoDataMessage();
+        } finally {
+            hideLoadingOverlay();
+        }
+    }
+
+    // Set selected company in Django session
+    async function setSelectedCompany(companyCode) {
+        if (!companyCode) {
+            return false;
+        }
+
+        try {
+            const response = await fetch('/set_selected_company/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    company_code: parseInt(companyCode)
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Company set successfully:', result.company_code);
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Error setting selected company:', error);
+            return false;
+        }
+    }
+
+    // Load transaction data
+    async function loadTransactionData() {
+        if (isLoadingData) return;
+
+        isLoadingData = true;
+        showLoadingOverlay();
+
+        try {
+            const dateInput = document.getElementById('selectedDate') || document.getElementById('selectedDateMobile');
+            const selectedDate = dateInput ? dateInput.value : getCurrentDate();
+            const companySelect = document.getElementById('companySelect') || document.getElementById('companySelectMobile');
+            const selectedCompany = companySelect ? companySelect.value : null;
+
+            console.log('Loading data for:', selectedDate, selectedCompany);
+
+            // Set selected company in session if it has changed
+            if (selectedCompany && selectedCompany !== currentCompanyCode) {
+                console.log('Company changed from', currentCompanyCode, 'to', selectedCompany);
+                await setSelectedCompany(selectedCompany);
+                currentCompanyCode = selectedCompany;
+            }
+
+            // Try to fetch from Django API
+            let data = null;
+            try {
+                const dateToUse = selectedDate && selectedDate.trim() !== '' ? selectedDate : getCurrentDate();
+                const url = `/get_transaction_data/?date=${dateToUse}`;
+
+                const response = await fetch(url);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        data = result.data;
+                        console.log('Transaction data loaded from API:', data);
+                    } else {
+                        throw new Error(result.error || 'API error');
+                    }
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (apiError) {
+                console.log('API not available or no data found');
+                showNoDataMessage();
+                return;
+            }
+
+            // Check if data exists
+            const hasData = data && (
+                    (data.sales && Object.keys(data.sales).length > 0) ||
+                    (data.purchase && Object.keys(data.purchase).length > 0) ||
+                    (data.payments && Object.keys(data.payments).length > 0) ||
+                    (data.receipts && Object.keys(data.receipts).length > 0) ||
+                    (data.liquidity && Object.keys(data.liquidity).length > 0)
+                );
+
+            if (!hasData) {
+                showNoDataMessage();
+                return;
+            }
+
+            // Update sections
+            updateSalesDataGrid(data.sales, data.item_groups?.sales);
+            updateDataGrid('purchase', data.purchase);
+            updateDataGrid('payments', data.payments);
+            updateDataGrid('receipts', data.receipts);
+            updateDataGrid('liquidity', data.liquidity);
+
+            // Update charts
+            updateChartsData(data);
+
+        } catch (error) {
+            console.error('Error loading transaction data:', error);
+            showNoDataMessage();
+        } finally {
+            isLoadingData = false;
+            hideLoadingOverlay();
+        }
+    }
+
+    // Show no data message
+    function showNoDataMessage() {
+        const sections = ['salesSection', 'purchaseSection', 'paymentsSection', 'receiptsSection', 'liquiditySection'];
+
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            const grid = document.getElementById(sectionId.replace('Section', 'DataGrid'));
+            const total = document.getElementById(sectionId.replace('Section', 'Total'));
+
+            section.classList.remove('d-none');
+            grid.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No data found for the selected date and company
+                        </div>
+                    </div>
+                `;
+            total.textContent = 'Total: QAR  0';
+        });
+
+        // Clear charts
+        if (salesChart) salesChart.data = {labels: [], datasets: []};
+        if (purchaseChart) purchaseChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};
+        if (paymentsChart) paymentsChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};
+        if (receiptsChart) receiptsChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};
+        if (liquidityChart) liquidityChart.data = {labels: [], datasets: [{data: [], backgroundColor: []}]};
+
+        [salesChart, purchaseChart, paymentsChart, receiptsChart, liquidityChart].forEach(chart => {
+            if (chart) chart.update();
+        });
+    }
+
+    // Update sales data grid with responsive business type columns
+    function updateSalesDataGrid(salesData, itemGroups = null) {
+        const grid = document.getElementById('salesDataGrid');
+        const section = document.getElementById('salesSection');
+        const totalSpan = document.getElementById('salesTotal');
+
+        grid.innerHTML = '';
+
+        if (!salesData || Object.keys(salesData).length === 0) {
+            section.classList.add('d-none');
+            return;
+        }
+
+        section.classList.remove('d-none');
+
+        // Calculate grand total
+        let grandTotal = 0;
+        Object.values(salesData).forEach(categoryData => {
+            Object.values(categoryData).forEach(amount => {
+                grandTotal += amount;
+            });
+        });
+
+        totalSpan.textContent = `Total: QAR  ${grandTotal.toLocaleString()}`;
+
+        // Calculate responsive column size based on number of business types
+        const businessTypeCount = Object.keys(salesData).length;
+        let colClass = 'col-12';
+        if (businessTypeCount <= 2) colClass = 'col-md-6';
+        else if (businessTypeCount <= 3) colClass = 'col-lg-4';
+        else if (businessTypeCount <= 4) colClass = 'col-xl-3';
+        else colClass = 'col-xxl-2';
+
+        Object.keys(salesData).forEach(typeCode => {
+            const categoryData = salesData[typeCode];
+            const categoryName = itemGroups && itemGroups[typeCode] ? itemGroups[typeCode] : `Business Type ${typeCode}`;
+
+            const totalAmount = Object.values(categoryData).reduce((sum, amount) => sum + amount, 0);
+
+            if (totalAmount > 0) {
+                const businessTypeColumn = document.createElement('div');
+                businessTypeColumn.className = colClass;
+                businessTypeColumn.innerHTML = `
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h6 class="mb-1">${categoryName}</h6>
+                                <small class="badge bg-light text-primary">QAR  ${totalAmount.toLocaleString()}</small>
+                            </div>
+                            <div class="card-body p-2">
+                                ${Object.entries(categoryData).filter(([, amount]) => amount > 0).map(([transType, amount]) => `
+                                    <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-body-secondary rounded border-start border-primary border-3">
+                                        <small class="text-muted">${transType.charAt(0).toUpperCase() + transType.slice(1)}</small>
+                                        <strong class="text-primary">QAR  ${amount.toLocaleString()}</strong>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                grid.appendChild(businessTypeColumn);
+            }
+        });
+    }
+
+    // Update data grid with small rounded boxes
+    function updateDataGrid(sectionType, data) {
+        const grid = document.getElementById(`${sectionType}DataGrid`);
+        const section = document.getElementById(`${sectionType}Section`);
+        const totalSpan = document.getElementById(`${sectionType}Total`);
+
+        grid.innerHTML = '';
+
+        if (!data || Object.keys(data).length === 0 || Object.values(data).every(val => val === 0)) {
+            section.classList.add('d-none');
+            return;
+        }
+
+        section.classList.remove('d-none');
+
+        // Calculate total
+        const total = Object.values(data).reduce((sum, amount) => sum + amount, 0);
+        totalSpan.textContent = `Total: QAR  ${total.toLocaleString()}`;
+
+        // Create small rounded boxes for payment types
+        Object.entries(data).forEach(([key, amount]) => {
+            if (amount > 0) {
+                const paymentBox = document.createElement('div');
+                paymentBox.className = 'col-6 col-sm-4 col-md-3 col-lg-2';
+                paymentBox.innerHTML = `
+                        <div class="card border-0 bg-body-secondary h-100">
+                            <div class="card-body p-2 text-center">
+                                <div class="badge bg-primary text-white mb-1 w-100 py-2">
+                                    ${key.charAt(0).toUpperCase() + key.slice(1)}
+                                </div>
+                                <div class="fs-6 fw-bold text-success">QAR  ${amount.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                grid.appendChild(paymentBox);
+            }
+        });
+    }
+
+    // Chart colors using standard Bootstrap colors
+    function getChartColors() {
+        return {
+            cash: '#198754',      // success
+            card: '#0d6efd',      // primary
+            credit: '#ffc107',    // warning
+            online: '#dc3545',    // danger
+            bank: '#6f42c1',      // purple
+            investment: '#fd7e14', // orange
+            default: '#6c757d'    // secondary
+        };
+    }
+
+    // Create charts
+    function createCharts() {
+        const colors = getChartColors();
+
+        // Sales Chart
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        salesChart = new Chart(salesCtx, {
+            type: 'bar',
+            data: {labels: [], datasets: []},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'top'}},
+                scales: {
+                    y: {beginAtZero: true},
+                    x: {beginAtZero: true}
+                }
+            }
+        });
+
+        // Purchase Chart
+        const purchaseCtx = document.getElementById('purchaseChart').getContext('2d');
+        purchaseChart = new Chart(purchaseCtx, {
+            type: 'pie',
+            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        });
+
+        // Payments Chart
+        const paymentsCtx = document.getElementById('paymentsChart').getContext('2d');
+        paymentsChart = new Chart(paymentsCtx, {
+            type: 'pie',
+            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        });
+
+        // Receipts Chart
+        const receiptsCtx = document.getElementById('receiptsChart').getContext('2d');
+        receiptsChart = new Chart(receiptsCtx, {
+            type: 'pie',
+            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        });
+
+        // Liquidity Chart
+        const liquidityCtx = document.getElementById('liquidityChart').getContext('2d');
+        liquidityChart = new Chart(liquidityCtx, {
+            type: 'doughnut',
+            data: {labels: [], datasets: [{data: [], backgroundColor: []}]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        });
+    }
+
+    // Update charts data
+    function updateChartsData(data) {
+        const colors = getChartColors();
+
+        // Update Sales Chart
+        if (salesChart && data.sales) {
+            const businessTypes = Object.keys(data.sales);
+            const businessTypeNames = businessTypes.map(typeCode =>
+                    data.item_groups?.sales[typeCode] || `Business Type ${typeCode}`
+            );
+
+            const allTransTypes = new Set();
+            Object.values(data.sales).forEach(categoryData => {
+                Object.keys(categoryData).forEach(transType => {
+                    if (categoryData[transType] > 0) {
+                        allTransTypes.add(transType);
+                    }
+                });
+            });
+
+            salesChart.data.labels = businessTypeNames;
+            salesChart.data.datasets = Array.from(allTransTypes).map(transType => ({
+                label: transType.charAt(0).toUpperCase() + transType.slice(1),
+                data: businessTypes.map(typeCode => data.sales[typeCode][transType] || 0),
+                backgroundColor: colors[transType] || colors.default
+            }));
+            salesChart.update();
+        }
+
+        // Update other charts
+        ['purchase', 'payments', 'receipts', 'liquidity'].forEach(type => {
+            const chart = eval(`${type}Chart`);
+            if (chart && data[type]) {
+                const entries = Object.entries(data[type]).filter(([, value]) => value > 0);
+                chart.data.labels = entries.map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+                chart.data.datasets[0].data = entries.map(([, value]) => value);
+                chart.data.datasets[0].backgroundColor = entries.map(([key]) => colors[key] || colors.default);
+                chart.update();
+            }
+        });
+    }
+
+    // Show/hide loading overlay
+    function showLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
+    }
+
+    function hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'none';
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        initDashboard();
+
+        // Date change handlers for both desktop and mobile
+        const dateInputs = ['selectedDate', 'selectedDateMobile'];
+        dateInputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('change', function () {
+                    if (!isLoadingData) {
+                        console.log('Date changed to:', this.value);
+                        // Sync both date inputs
+                        dateInputs.forEach(id => {
+                            const dateInput = document.getElementById(id);
+                            if (dateInput && dateInput !== this) {
+                                dateInput.value = this.value;
+                            }
+                        });
+                        loadTransactionData();
+                    }
+                });
+            }
+        });
+
+        // Company change handlers for both desktop and mobile
+        const companySelects = ['companySelect', 'companySelectMobile'];
+        companySelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.addEventListener('change', function () {
+                    if (!isLoadingData) {
+                        console.log('Company changed to:', this.value);
+                        // Sync both company selects
+                        companySelects.forEach(id => {
+                            const companySelect = document.getElementById(id);
+                            if (companySelect && companySelect !== this) {
+                                companySelect.value = this.value;
+                            }
+                        });
+                        loadTransactionData();
+                    }
+                });
+            }
+        });
+
+        // Navigation button handlers (desktop and mobile)
+        const buttonHandlers = [
+            { ids: ['refreshBtn', 'refreshBtnMobile'], handler: () => refreshData() },
+            { ids: ['prevBtn', 'prevBtnMobile'], handler: () => changeDate('prev') },
+            { ids: ['nextBtn', 'nextBtnMobile'], handler: () => changeDate('next') }
+        ];
+
+        buttonHandlers.forEach(({ ids, handler }) => {
+            ids.forEach(id => {
+                const button = document.getElementById(id);
+                if (button) {
+                    button.addEventListener('click', handler);
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
